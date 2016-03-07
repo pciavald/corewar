@@ -1,0 +1,115 @@
+fin du jeu quand aucun processus n'est en vie
+gagnant est le dernier a avoir été rapporté comme "en vie"
+
+open
+read
+write
+lseek
+close
+malloc
+realloc
+free
+exit
+perror / strerror (et, du coup, errno)
+
+I - l'assembleur
+compile les champions
+traduit le corasm en bytecode
+une instruction par ligne
+[label+char] opcode params
+un label peut n'avoir aucune instruction à la suite
+un label peut être placé sur la ligne d'avant l'instruction
+tous les adressages sont relatifs à PC et à DIX_MOD
+SAUF lld, lldi, lfork
+un code non répertorié passe au suivant et perd un cycle
+l'executable commence par header_t
+
+-types de param-
+- registre	: r1 <=> rx (REG_NUMBER)
+- direct	: DIRECT_CHAR + valeur numérique
+			: DIRECT_CHAR + LABEL_CHAR + label
+- indirect	: *adresse relative au PC
+			: LABEL_CHAR + *label
+
+-macros-
+LABEL_CHARS
+string des caractères autorisés dans le label
+
+LABEL_CHAR
+le caractère qui termine un label
+
+SEPARATOR_CHAR
+caractère qui sépare les params
+
+DIRECT_CHAR
+significatif d'une valeur directe
+
+COMMENT_CHAR
+caractère de commentaire
+
+NAME_CMD_STRING
+marqueur de début de nom de programme
+
+COMMENT_CMD_STRING
+marqueur de début de description de programme
+
+IDX_MOD
+?
+
+II - la VM
+-général-
+big endian
+interprète le bytecode compilé
+arène dans laquelle les champions s'exécutent
+elle offre des fonctionnalités
+permet d'exécuter plusieurs processus en simultané
+le chargement espace équitablement les points d'entrée
+mémoire circulaire
+parfaitement parallèle
+chaque instruction s'exécute à la fin de son dernier cycle
+les instructions qui se terminent au même cycle sont executées dans l'ordre decroissant des numéros de processus
+dernier né joue en premier
+usage : ./corewar [-dump nbr_cycles] [[-n number] champion1.cor]
+-dump la mémoire en hexa, 32 octets par ligne, sur stdout au bout de nbr_cycles puis quitte
+-n number fixe le numéro du joueur suivant
+si absent, le joueur obtient le prochain numéro libre dans l'ordre des params
+
+-macros-
+MEM_SIZE
+taille de l'arène
+
+CHAMP_MAX_SIZE
+nombre de champions à ne pas dépasser (sinon erreur)
+
+CYCLE_TO_DIE
+nombre de cycles avant la vérification qu'un live a été émis par les champions
+sans cela le champion est mis à mort.
+
+NBR_LIVE
+décrémente CYCLE_TO_DIE de CYCLE_DELTA s'il est atteint lors de la vérification
+
+MAX_CHECKS
+décrémente CYCLE_TO_DIE malgré NBR_LIVE
+
+CYCLE_DELTA
+le décrément de NBR_LIVE
+
+-éléments propres aux processus-
+REG_NUMBER
+nombre de registres, cases mémoires, qui ne contiennent chacun qu'une seule valeur.
+
+REG_SIZE
+la taille de ces registres
+
+PC
+program counter
+contien l'adresse, dans la VM, de la prochaine instruction à décoder / exécuter
+
+carry
+vaut 1 si la dernière opération éligible a réussi
+
+numéro du joueur
+généré par la machine ou spécifié au lancement
+fourni aux champions via le registre r1
+
+tous les autres registres sont à 0 sauf le PC
